@@ -1,3 +1,4 @@
+var NO_NAME="[No Name]";
     $( "#open" ).button({
       text: false,
       icons: {
@@ -42,8 +43,41 @@
       }
     })
     .click(function() {
-      download('test.txt', editor.doc.getValue());
+      //download('test.txt', editor.doc.getValue());
+      	  console.log("==== {{{save button ===");
+	  handleSaveButton();
+      	  console.log("==== save button}}} ===");
       });
+      function handleSaveButton() {
+  if (fileEntry && hasWriteAccess) {
+    writeEditorToFile(fileEntry);
+  } else {
+    chrome.fileSystem.chooseEntry({ type: 'saveFile' }, onChosenFileToSave);
+  }
+}
+
+var onChosenFileToSave = function(theFileEntry) {
+  setFile(theFileEntry, true);
+  writeEditorToFile(theFileEntry);
+};
+function writeEditorToFile(theFileEntry) {
+  theFileEntry.createWriter(function(fileWriter) {
+    fileWriter.onerror = function(e) {
+      console.log("Write failed: " + e.toString());
+    };
+
+    var blob = new Blob([editor.getValue()]);
+    fileWriter.truncate(blob.size);
+    fileWriter.onwriteend = function() {
+      fileWriter.onwriteend = function(e) {
+        handleDocumentChange(theFileEntry.fullPath);
+        console.log("Write completed.");
+      };
+
+      fileWriter.write(blob);
+    }
+  }, errorHandler);
+}
     $( "#undo" ).button({
       text: false,
       icons: {
@@ -80,7 +114,11 @@
             of: this
           });
           $( document ).one( "click", function() {
+	  console.log($('#themeList li.selected a').text());
+	  console.log($(this));
 	    console.log(menu);
+    //var theme = input.options[input.selectedIndex].innerHTML;
+    //editor.setOption("theme", theme);
             menu.hide();
           });
           return false;
@@ -98,8 +136,10 @@
     //tab section start
   var tabTitle = $( "#tab_title" ),
       tabContent = $( "#tab_content" ),
-      tabTemplate = "<li><a id='#{labelid}' href='#{href}' onclick='selectLabel(this)'>#{label}</a> <span class='ui-icon ui-icon-close' role='presentation'>Remove Tab</span></li>",
-      tabCounter = 1;
+      //tabTemplate = "<li id='ok'><a id='#{labelid}' href='#{href}' onclick='selectLabel(this)'>#{label}</a> <span class='ui-icon ui-icon-close' role='presentation'>Remove Tab</span></li>",
+      tabTemplate = "<li><a id='#{labelid}' href='#{href}'>#{label}</a> <span class='ui-icon ui-icon-close' role='presentation'>Remove Tab</span></li>",
+      tabCounter = 1,
+      tabIndex = 1;
  
     var tabs = $( "#tabs" ).tabs();
  
@@ -130,11 +170,21 @@
 
    // var currentLabel=$("#labels-1");
     function selectLabel(obj){
+    
 	console.log("==== {{{selectLabel ====");
+      	$("#tabs-"+tabIndex).hide();
+	console.log("hide "+tabIndex);
+	tabIndex=obj.id.substring(obj.id.find("-")+1);
+      	$("#tabs-"+tabIndex).show();
+      	$("#tabs-"+tabIndex+" textarea").focus();
+	console.log("select tab:"+tabIndex);
         //console.log("select label:"+obj.id);
 	//console.log(editor);
 	editor=editors["code-"+String.fromCharCode(parseInt(obj.id.substring(obj.id.indexOf('-')+1))+96)]
+
+	/*
     	currentLabel=$("#"+obj.id);
+	console.log("tabIndex:"+tabIndex);
 	//remove label focus
 	currentLabel.blur();
 	console.log(document.activeElement);
@@ -148,19 +198,21 @@
 	console.log($("#labels-1"));
 	console.log($("#labels-2"));
 	console.log("==== selectLabel}}} ====");
+*/	
     }
     
     function openTab(){
     	addTab();
-	$("#files").click();
+    	chrome.fileSystem.chooseEntry({ type: 'openWritableFile' }, onWritableFileToOpen);
     }
     function editNew(){
-	editor.doc.setValue('');
+        fileEntry = null;
+  	hasWriteAccess = false;
+	handleDocumentChange(null);
     }
- 
     // actual addTab function: adds new tab using the input from the form above
     function addTab() {
-      var label = "[No Name]",//tabTitle.val() || "Tab " + tabCounter,
+      var label = NO_NAME,//tabTitle.val() || "Tab " + tabCounter,
         id = "tabs-" + tabCounter,
         li = $( tabTemplate.replace( /#\{href\}/g, "#" + id ).replace( /#\{label\}/g, label ).replace( /#\{labelid\}/g, "labels-"+tabCounter ) ),
         tabContentHtml = "";//tabContent.val() || "Tab " + tabCounter + " content.";
@@ -179,9 +231,79 @@
 		  cm.foldCode(cm.getCursor());
 		  console.log("EK:"+cm.hasFocus()); 
 		},
-		"Ctrl-Insert":function(){
+		"Ctrl-O":function(){
+    		  chrome.fileSystem.chooseEntry({ type: 'openWritableFile' }, onWritableFileToOpen);
+		},
+		"Ctrl-H":function(){
+		  //move to first tab
+		  console.log("-- {{{Ctrl-H --");
+		  console.log("tabCounter:"+tabCounter);
+		  if(tabCounter-1>=1&&tabContent-1!=tabIndex)
+		  {
+      		  	$("#tabs-"+tabIndex).hide();
+      			$("#labels-"+tabIndex).css('background-color','rgba(0, 0, 0, 0)');
+			console.log("hide "+tabIndex);
+			tabIndex=1;
+      		  	$("#tabs-"+tabIndex).show();
+      			$("#labels-"+tabIndex).css('background-color','white');
+      		        $("#tabs-"+tabIndex+" textarea").focus();
+			console.log("show");
+		  }	
+		},
+		"Ctrl-L":function(){
+		  //move to last tab
+		  console.log("-- {{{Ctrl-L --");
+		  console.log("tabCounter:"+tabCounter);
+		  if(tabCounter-1>0 && tabIndex!=tabCounter-1)
+		  {
+      		  	$("#tabs-"+tabIndex).hide();
+      			$("#labels-"+tabIndex).css('background-color','rgba(0, 0, 0, 0)');
+			console.log("hide "+tabIndex);
+			tabIndex=tabCounter-1;
+      		  	$("#tabs-"+tabIndex).show();
+      			$("#labels-"+tabIndex).css('background-color','white');
+      			$("#tabs-"+tabIndex+" textarea").focus();
+			console.log("show "+tabIndex);
+		  }	
+		},
+		"Ctrl-J":function(){
+		  //move to next tab
+		  console.log("-- {{{Ctrl-J --");
+		  console.log("tabIndex:"+tabIndex);
+		  console.log("tabCounter:"+tabCounter);
+		  if(tabIndex+1<=tabCounter-1)
+		  {
+      		  	$("#tabs-"+tabIndex).hide();
+			console.log("hide "+tabIndex);
+      			$("#labels-"+tabIndex).css('background-color','rgba(0, 0, 0, 0)');
+		  	tabIndex++;
+      			$("#labels-"+tabIndex).css('background-color','white');
+      		  	$("#tabs-"+tabIndex).show();
+      			$("#tabs-"+tabIndex+" textarea").focus();
+			console.log("select tab "+tabIndex);
+		  }	
+		},
+		"Ctrl-K":function(){
+		  console.log("-- {{{Ctrl-K --");
+		  console.log("tabIndex:"+tabIndex);
+		  //move to previous tab
+		  if(tabIndex-1>=1)
+		  {
+      		  	$("#tabs-"+tabIndex).hide();
+      			$("#labels-"+tabIndex).css('background-color','rgba(0, 0, 0, 0)');
+			console.log("hide "+tabIndex);
+		  	tabIndex--;
+      		  	$("#tabs-"+tabIndex).show();
+      			$("#labels-"+tabIndex).css('background-color','white');
+      			$("#tabs-"+tabIndex+" textarea").focus();
+			console.log("select tab:"+tabIndex);
+		  }	
+		},
+		"Ctrl-T":function(){
 		  addTab();
 		},
+		"Cmd-S": function(instance) { handleSaveButton() },
+                "Ctrl-S": function(instance) { handleSaveButton() },
 		"Ctrl-Delete":function(){
 		  removeTab();
 		},
@@ -201,13 +323,25 @@
       });
 
       editors["code-"+String.fromCharCode(96 +tabCounter)]=editor;
-      //comment below line because error:Refused to execute inline event handler because it violates the following Content Security Policy directive
-      $("#labels-"+tabCounter).click();
+      $("#tabs-"+tabCounter).show();
       editor.doc.setValue('');
+      currentLabel=$("#labels-"+tabCounter)
+      currentLabel.focus();
+      if(tabCounter==1)
+      $("#labels-"+tabCounter).css('background-color','white');
+      else
+      {
+	     $("#labels-"+(tabCounter-1)).css('background-color','rgba(0, 0, 0, 0)');
+	      $("#labels-"+tabCounter).css('background-color','white');
+      }
       $("#tabs-"+tabCounter+" textarea").focus();
       console.log("==== {{addtab ====");
+      console.log(tabCounter);
       console.log(editor.doc.getValue());
       console.log("==== addtab}} ====");
+      tabIndex=tabCounter;
+      
+      console.log("show "+tabIndex);
       tabCounter++;
     }
  
@@ -287,119 +421,6 @@ var input = document.getElementById("select");
     editor.setOption("theme", choice);
   }
       
-      //read file
-    function readBlob(opt_startByte, opt_stopByte) {
-
-    var files = document.getElementById('files').files;
-    if (!files.length) {
-      alert('Please select a file!');
-      return;
-    }
-
-    var file = files[0];
-    var start = parseInt(opt_startByte) || 0;
-    var stop = parseInt(opt_stopByte) || file.size - 1;
-
-    var reader = new FileReader();
-
-    // If we use onloadend, we need to check the readyState.
-    reader.onloadend = function(evt) {
-      if (evt.target.readyState == FileReader.DONE) { // DONE == 2
-        //document.getElementById('byte_content').textContent = evt.target.result;
-	var ext="";
-	console.log(currentLabel);
-	console.log("when read file , the current label is: "+currentLabel.text());
-	console.log("when read file , the current label is: "+currentLabel.text);
-	currentLabel.text(file.name);
-	ext=file.name.substring(file.name.lastIndexOf('.')+1);
-	console.log(ext);
-	switch(ext)
-	{
-		case "html":
-		case "htm":
-			var mixedMode = {
-			name: "htmlmixed",
-			scriptTypes: [{matches: /\/x-handlebars-template|\/x-mustache/i,
-				       mode: null},
-				      {matches: /(text|application)\/(x-)?vb(a|script)/i,
-				       mode: "vbscript"}]
-		      };
-			editor.setOption("mode",mixedMode);
-			//console.log(editor.doc.getMode().name);
-			break;
-		case "js":
-			editor.setOption("mode","text/javascript");
-			break;
-		case "json":
-			editor.setOption("mode","application/json");
-			break;
-		case "go":
-			editor.setOption("mode","text/x-go");
-			break;
-		case "markdown":
-		case "mdown":
-		case "mkdn":
-		case "md":
-		case "mkd":
-		case "mdwn":
-		case "mdtxt":
-		case "mdtext":
-		case "text":
-			editor.setOption("mode","text/x-markdown");
-			break;
-		case "py":
-			editor.setOption("mode","text/x-python");
-			break;
-		case "xml":
-			editor.setOption("mode","application/xml");
-			break;
-		case "pl":
-			editor.setOption("mode","text/x-perl");
-			break;
-		case "php":
-			editor.setOption("mode","text/x-php");
-			break;
-		case "rb":
-			editor.setOption("mode","text/x-ruby");
-			break;
-		case "tcl":
-			editor.setOption("mode","text/x-tcl");
-			break;
-		case "vb":
-			editor.setOption("mode","text/x-vb");
-			break;
-		case "vbs":
-			editor.setOption("mode","text/vbscript");
-			break;
-		case "cs":
-			editor.setOption("mode","text/x-csharp");
-			break;
-		case "c":
-			editor.setOption("mode","text/x-csrc");
-			break;
-		case "cpp":
-			editor.setOption("mode","text/x-c++src");
-			break;
-		case "java":
-			editor.setOption("mode","text/x-java");
-			break;
-		case "css":
-			editor.setOption("mode","text/css");
-			break;
-	}
-	editor.doc.setValue(evt.target.result);
-        //document.getElementById('byte_range').textContent = 
-        //    ['Read bytes: ', start + 1, ' - ', stop + 1,
-        //     ' of ', file.size, ' byte file'].join('');
-    console.log(document.activeElement);
-      }
-    };
-
-    var blob = file.slice(start, stop + 1);
-    reader.readAsBinaryString(blob);
-	     console.log("2");
-    console.log("==== }}}readBlob ===");
-  }
 function download(filename, text) {
     var pom = document.createElement('a');
     pom.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
@@ -448,7 +469,55 @@ function handleDocumentChange(title) {
     if (title.match(/.json$/)) {
       mode = {name: "javascript", json: true};
       modeName = "JavaScript (JSON)";
-    } else if (title.match(/.html$/)) {
+    } else if (title.match(/.js$/)) {
+      mode = "text/javascript";
+      modeName = "JavaScript";
+    } else if (title.match(/.py$/)) {
+      mode = "text/x-python";
+      modeName = "Python";
+    } else if (title.match(/.xml$/)) {
+      mode = "application/xml";
+      modeName = "XML";
+    } else if (title.match(/.pl$/)) {
+      mode = "text/x-perl";
+      modeName = "Perl";
+    } else if (title.match(/.php$/)) {
+      mode = "text/x-php";
+      modeName = "PHP";
+    } else if (title.match(/.rb$/)) {
+      mode = "text/x-ruby";
+      modeName = "Ruby";
+    } else if (title.match(/.tcl$/)) {
+      mode = "text/x-tcl";
+      modeName = "TCL";
+    } else if (title.match(/.vb$/)) {
+      mode = "text/x-vb";
+      modeName = "VB";
+    } else if (title.match(/.vbs$/)) {
+      mode = "text/vbscript";
+      modeName = "VBScript";
+    } else if (title.match(/.cs$/)) {
+      mode = "text/x-csharp";
+      modeName = "C#";
+    } else if (title.match(/.c$/)) {
+      mode = "text/x-csrc";
+      modeName = "C";
+    } else if (title.match(/.cpp$/)) {
+      mode = "text/x-c++src";
+      modeName = "C++";
+    } else if (title.match(/.java$/)) {
+      mode = "text/x-java";
+      modeName = "Java";
+    } else if (title.match(/.css$/)) {
+      mode = "text/css";
+      modeName = "CSS";
+    } else if (title.match(/.go$/)) {
+      mode = "text/x-go";
+      modeName = "Go";
+    } else if (title.match(/.markdown|.mdown|.mkdn|.md|.mkd|.mdwn|.mdtxt|.mdtext|.text$/)) {
+      mode = "text/x-markdown";
+      modeName = "Markdown";
+    }else if (title.match(/.html|.htm$/)) {
       mode = "htmlmixed";
       modeName = "HTML";
     } else if (title.match(/.css$/)) {
@@ -457,6 +526,9 @@ function handleDocumentChange(title) {
     }
   } else {
     //document.getElementById("title").innerHTML = "[no document loaded]";
+    	currentLabel.text(NO_NAME);
+	editor.doc.setValue('');
+      	$(currentLabel.attr('href')+" textarea").focus();
   }
   editor.setOption("mode", mode);
   //document.getElementById("mode").innerHTML = modeName;
@@ -488,17 +560,13 @@ function errorHandler(e) {
   console.log("Error: " + msg);
 }
     $("#open").click(function() {
-    chrome.fileSystem.chooseEntry({ type: 'openWritableFile' }, onWritableFileToOpen);
-
-    	//$("#files").click();
+    	chrome.fileSystem.chooseEntry({ type: 'openWritableFile' }, onWritableFileToOpen);
     });
     $("#undo").click(function() {
 	editor.doc.undo();
-	if(editor.doc.historySize().undo==0)$(this).attr("disabled",true);
     });
     $("#redo").click(function() {
 	editor.doc.redo();
-	if(editor.doc.historySize().undo==0)$(this).attr("disabled",true);
     });
     addTab();
   //  document.getElementById("code-a").focus();
