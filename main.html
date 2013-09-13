@@ -1,0 +1,191 @@
+<!doctype html>
+
+<title>webvim</title>
+<meta charset="utf-8"/>
+<link rel="stylesheet" href="style.css" />
+<link rel="stylesheet" href="lib/jquery/jquery-ui.css" />
+<script src="lib/jquery/jquery-1.9.1.js"></script>
+<script src="lib/jquery/jquery-ui.js"></script>
+
+<link rel=stylesheet href="lib/codemirror/doc/docs.css">
+
+<link rel="stylesheet" href="lib/codemirror/lib/codemirror.css">
+<link rel="stylesheet" href="lib/codemirror/addon/dialog/dialog.css">
+<link rel="stylesheet" href="lib/codemirror/theme/3024-day.css">
+<link rel="stylesheet" href="lib/codemirror/theme/3024-night.css">
+<link rel="stylesheet" href="lib/codemirror/theme/ambiance.css">
+<link rel="stylesheet" href="lib/codemirror/theme/base16-dark.css">
+<link rel="stylesheet" href="lib/codemirror/theme/base16-light.css">
+<link rel="stylesheet" href="lib/codemirror/theme/blackboard.css">
+<link rel="stylesheet" href="lib/codemirror/theme/cobalt.css">
+<link rel="stylesheet" href="lib/codemirror/theme/eclipse.css">
+<link rel="stylesheet" href="lib/codemirror/theme/elegant.css">
+<link rel="stylesheet" href="lib/codemirror/theme/erlang-dark.css">
+<link rel="stylesheet" href="lib/codemirror/theme/lesser-dark.css">
+<link rel="stylesheet" href="lib/codemirror/theme/midnight.css">
+<link rel="stylesheet" href="lib/codemirror/theme/monokai.css">
+<link rel="stylesheet" href="lib/codemirror/theme/neat.css">
+<link rel="stylesheet" href="lib/codemirror/theme/night.css">
+<link rel="stylesheet" href="lib/codemirror/theme/paraiso-dark.css">
+<link rel="stylesheet" href="lib/codemirror/theme/paraiso-light.css">
+<link rel="stylesheet" href="lib/codemirror/theme/rubyblue.css">
+<link rel="stylesheet" href="lib/codemirror/theme/solarized.css">
+<link rel="stylesheet" href="lib/codemirror/theme/the-matrix.css">
+<link rel="stylesheet" href="lib/codemirror/theme/tomorrow-night-eighties.css">
+<link rel="stylesheet" href="lib/codemirror/theme/twilight.css">
+<link rel="stylesheet" href="lib/codemirror/theme/vibrant-ink.css">
+<link rel="stylesheet" href="lib/codemirror/theme/xq-dark.css">
+<link rel="stylesheet" href="lib/codemirror/theme/xq-light.css">
+<link rel="stylesheet" href="lib/codemirror/addon/hint/show-hint.css">
+
+<script src="lib/codemirror/lib/codemirror.js"></script>
+<script src="lib/codemirror/addon/fold/foldcode.js"></script>
+<script src="lib/codemirror/addon/fold/foldgutter.js"></script>
+<script src="lib/codemirror/addon/fold/brace-fold.js"></script>
+<script src="lib/codemirror/addon/fold/xml-fold.js"></script>
+<script src="lib/codemirror/addon/fold/comment-fold.js"></script>
+<script src="lib/codemirror/addon/dialog/dialog.js"></script>
+<script src="lib/codemirror/addon/search/searchcursor.js"></script>
+<script src="lib/codemirror/mode/clike/clike.min.js"></script>
+<script src="lib/codemirror/addon/hint/javascript-hint.js"></script>
+<script src="lib/codemirror/addon/hint/python-hint.js"></script>
+<script src="lib/codemirror/addon/hint/show-hint.js"></script>
+<script src="lib/codemirror/mode/xml/xml.js"></script>
+<script src="lib/codemirror/mode/javascript/javascript.js"></script>
+<script src="lib/codemirror/mode/css/css.js"></script>
+<script src="lib/codemirror/mode/vbscript/vbscript.js"></script>
+<script src="lib/codemirror/mode/htmlmixed/htmlmixed.js"></script>
+<script src="lib/codemirror/mode/python/python.js"></script>
+<script src="lib/codemirror/keymap/vim.js"></script>
+<script src="lib/codemirror/keymap/extra.js"></script>
+<script src="lib/codemirror/addon/selection/active-line.js"></script>
+<script src="lib/codemirror/addon/edit/matchbrackets.js"></script>
+
+<style type="text/css">
+  #dialog label, #dialog input { display:block; }
+  #dialog label { margin-top: 0.5em; }
+  #dialog input, #dialog textarea { width: 95%; }
+  /*#tabs { margin-top: 1em; }*/
+  #tabs li .ui-icon-close { float: left; margin: 0.4em 0.2em 0 0; cursor: pointer; }
+  #add_tab { cursor: pointer; }
+
+ #toolbar {
+    padding: 2px;
+    display: inline-block;
+}
+  /* support: IE7 */
+  *+html #toolbar {
+    display: inline;
+  }
+
+      .CodeMirror {border-top: 1px solid #eee; border-bottom: 1px solid #eee;}
+      .CodeMirror-foldmarker {
+        color: blue;
+        text-shadow: #b9f 1px 1px 2px, #b9f -1px -1px 2px, #b9f 1px -1px 2px, #b9f -1px 1px 2px;
+        font-family: arial;
+        line-height: .3;
+        cursor: pointer;
+      }
+      .CodeMirror-foldgutter {
+        width: .7em;
+      }
+      .CodeMirror-foldgutter-open,
+      .CodeMirror-foldgutter-folded {
+        color: #555;
+        cursor: pointer;
+      }
+      .CodeMirror-foldgutter-open:after {
+        content: "\25BE";
+      }
+      .CodeMirror-foldgutter-folded:after {
+        content: "\25B8";
+      }
+     #files{
+     display:none;
+     }
+    </style>
+
+
+<div id="dialog" title="Tab data">
+  <form>
+    <fieldset class="ui-helper-reset">
+      <label for="tab_title">Title</label>
+      <input type="text" name="tab_title" id="tab_title" value="" class="ui-widget-content ui-corner-all" />
+      <label for="tab_content">Content</label>
+      <textarea name="tab_content" id="tab_content" class="ui-widget-content ui-corner-all"></textarea>
+    </fieldset>
+  </form>
+</div>
+ 
+
+<div id="toolbar" class="ui-widget-header ui-corner-all">
+  <span id="file">
+	  <button id="open">Open...</button>
+	  <button id="new">New</button>
+	  <button id="save">Save</button>
+  </span>
+  <span id="tabSet">
+	  <button id="opentab">Open Tab...</button>
+	  <button id="newtab">New Tab</button>
+  </span>
+  <span id="edit">
+	  <button id="undo">Undo</button>
+	  <button id="redo">Redo</button>
+  </span>
+  <span id="themeSet">
+    <button id="theme">Select a theme</button>
+    <button id="select">Select a theme</button>
+  </span>
+  <ul id="themeList" style="position:absolute;z-index:110007">
+    <li><a href="#">default</a></li>
+    <li><a href="#">3024-day</a></li>
+    <li><a href="#">3024-night</a></li>
+  </ul>
+  </div>
+<div>
+
+  </div>
+<input type="file" id="files" name="file" onchange="readBlob(null,null)"/>
+<!--
+<p>Select a theme: <select onchange="selectTheme()" id=select>
+    <option selected>default</option>
+    <option>3024-day</option>
+    <option>3024-night</option>
+    <option>ambiance</option>
+    <option>base16-dark</option>
+    <option>base16-light</option>
+    <option>blackboard</option>
+    <option>cobalt</option>
+    <option>eclipse</option>
+    <option>elegant</option>
+    <option>erlang-dark</option>
+    <option>lesser-dark</option>
+    <option>midnight</option>
+    <option>monokai</option>
+    <option>neat</option>
+    <option>night</option>
+    <option>paraiso-dark</option>
+    <option>paraiso-light</option>
+    <option>rubyblue</option>
+    <option>solarized dark</option>
+    <option>solarized light</option>
+    <option>the-matrix</option>
+    <option>tomorrow-night-eighties</option>
+    <option>twilight</option>
+    <option>vibrant-ink</option>
+    <option>xq-dark</option>
+    <option>xq-light</option>
+</select>
+</p>
+-->
+<div id="tabs">
+  <ul>
+  </ul>
+</div>
+<!--
+<div class="info">
+  <label>Filename: </label><span id="title"></span>
+  <label>Mode: </label><span id="mode"></span>
+</div>
+-->
+<script src="editor.js"></script>
